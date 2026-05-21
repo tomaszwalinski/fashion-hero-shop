@@ -1,4 +1,5 @@
 import { recordSignup } from "@/lib/seller-pro-store";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const VALID_INTERESTS = ["analytics", "campaigns"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,5 +23,14 @@ export async function POST(request: Request) {
   }
 
   recordSignup(email, interests as string[]);
+
+  const posthog = getPostHogClient();
+  posthog.identify({ distinctId: email, properties: { email } });
+  posthog.capture({
+    distinctId: email,
+    event: "seller_pro_signup_submitted",
+    properties: { email, interests },
+  });
+
   return Response.json({ ok: true });
 }

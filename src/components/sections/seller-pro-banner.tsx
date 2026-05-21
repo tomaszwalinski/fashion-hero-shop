@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 
 export function SellerProBanner() {
   const [hidden, setHidden] = useState(true);
@@ -16,6 +17,7 @@ export function SellerProBanner() {
 
   function handleClick() {
     fetch("/api/seller-pro/banner-click", { method: "POST" });
+    posthog.capture("seller_pro_banner_clicked");
   }
 
   return (

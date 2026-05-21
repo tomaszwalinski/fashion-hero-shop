@@ -5,6 +5,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { CloseIcon, MinusIcon, PlusIcon } from "./icons";
 import type { CartItem } from "@/types";
+import posthog from "posthog-js";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -118,11 +119,20 @@ export function CartDrawer({
                         <div className="flex items-center border border-cream-dark">
                           <button
                             className="p-1 hover:bg-cream-light"
-                            onClick={() =>
-                              item.quantity <= 1
-                                ? onRemove(index)
-                                : onUpdateQuantity(index, item.quantity - 1)
-                            }
+                            onClick={() => {
+                              if (item.quantity <= 1) {
+                                posthog.capture("cart_item_removed", {
+                                  product_id: item.product.id,
+                                  product_name: item.product.name,
+                                  product_price: item.product.price,
+                                  color: item.color.name,
+                                  size: item.size,
+                                });
+                                onRemove(index);
+                              } else {
+                                onUpdateQuantity(index, item.quantity - 1);
+                              }
+                            }}
                           >
                             <MinusIcon />
                           </button>
@@ -159,7 +169,13 @@ export function CartDrawer({
             <Link
               href="/checkout"
               className="btn-cta w-full block text-center"
-              onClick={onClose}
+              onClick={() => {
+                posthog.capture("checkout_started", {
+                  item_count: items.length,
+                  subtotal,
+                });
+                onClose();
+              }}
             >
               CHECKOUT
             </Link>
